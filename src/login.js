@@ -22,7 +22,7 @@ router.get('/',(req,res)=>{
 })
 
 router.post('/',passport.authenticate('local') ,(req,res)=>{
-    console.log(req.session)
+    res.send(req.user)
 })
 
 
