@@ -141,7 +141,6 @@ groupRouter.route('/:groupId')
 )});
 
 groupRouter.route('/:groupId/member')
-.options((req, res) => { res.sendStatus(200); })
 .get((req,res,next) => {
     Groups.findById(req.params.groupId)
     .then((group) => {
@@ -150,6 +149,7 @@ groupRouter.route('/:groupId/member')
         res.json(group);
     }, (err) => next(err))
     .catch((err) => next(err));
+    res.sendStatus(200);
 })
 .post(authenticate.verifyUser,(req, res, next) => {
     Groups.findById(req.params.groupId)
@@ -159,71 +159,67 @@ groupRouter.route('/:groupId/member')
             uniqueID:req.body.uniqueID,
             userID:req.user._id
         }
-        if(group.isPrivate)
+        console.log(group.members.find(e => console.log(`${e.userID}` == req.user._id)))
+        if(group.members.find(e => `${e.userID}` == req.user._id) || group.pendingReq.find(e => `${e.userID}` == req.user._id))
         {
-            group.pendingReq.push(request)
-            group.save();
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.json(group);
-        }
-        else{
-            group.members.push(request)
-            group.save();
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.json(group);
+            res.status(409).send({warningMssg : "Already a member"})
+        } 
+        else 
+        {
+            if(group.isPrivate)
+            {
+                group.pendingReq.push(request)
+                group.save();
+                res.redirect('/groups/usergroups');
+            }         
+            else{
+                group.members.push(request)
+                group.save();
+                Users.findById(req.user._id).then((user)=>
+                {
+                    user.groups.push(req.params.groupId);
+                    user.save();
+                })
+                .then(() => res.redirect('/groups/usergroups'))
+                
+            }
         }
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.put(authenticate.verifyAdmin,(req, res, next) => {
-    var request;
-    Groups.findByIdAndUpdate(
-        req.params.groupId,
-       { $pull: { 'pendingReq': {  _id: req.body.requestId } } },function(err,model){
+.put(authenticate.verifyAdmin,async (req, res, next) => {
+    // var request;
+    console.log("Request Made ");
+    await Groups.findByIdAndUpdate(
+       { _id :req.params.groupId},
+       { $pull: { 'pendingReq': {  _id: req.body.requestId } },
+         $addToSet:{"members":{ name:req.body.name,
+            uniqueID:req.body.uniqueID,
+            userID:req.body.userID}}},function(err,model){
           if(err){
                console.log(err);
                return res.send(err);
             }
          else{
             request=model;
-        }
-        }).then(()=>{
-            var mem={
-                name:req.body.name,
-                uniqueID:req.body.uniqueID,
-                userID:req.body.userID,
-            }
-            Groups.findByIdAndUpdate(
-                req.params.groupId,
-                { $push: {"members": mem}},
-                {  safe: true, upsert: true},
-                  function(err, model) {
-                    if(err){
-                       console.log(err);
-                       return res.send(err);
-                    }
-                 });
-        }).then(()=>{
-            Users.findById(req.body.userID).then((user)=>
+        }});
+    await Users.findById(req.body.userID).then((user)=>
             {
                 user.groups.push(req.params.groupId);
                 user.save();
-            })
-        }).then(()=>{
-            Admins.findById(req.user._id)
-            .populate('groups')
-            .then((admin) => {
+            }
+        ).then(()=>{
+            Groups.findById(req.params.groupId)
+            .then((group) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.json(admin.groups);
+                res.json(group);
             },err=>next(err))
             .catch((err) => next(err)); 
         })
 })
 .delete(authenticate.verifyAdmin,(req, res, next) => {
-    console.log(req);
+    // console.log(req);
     Groups.findByIdAndUpdate(
         req.params.groupId,
        { $pull: { 'members': {  _id: req.body.memberId } } },function(err,model){
@@ -239,18 +235,17 @@ groupRouter.route('/:groupId/member')
                 user.save()
             }
         }).then(()=>{
-            Admins.findById(req.user._id)
-            .populate('groups')
-            .then((admin) => {
+            Groups.findById(req.params.groupId)
+            .then((group) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.json(admin.groups);
+                res.json(group);
             },err=>next(err))
-            .catch((err) => next(err)); 
+            .catch((err) => next(err));  
         })
     });
 
-})
+});
 
 
 
@@ -264,18 +259,17 @@ groupRouter.route('/:groupId/removereq')
                return res.send(err);
             }
         }).then(()=>{
-            Admins.findById(req.user._id)
-            .populate('groups')
-            .then((admin) => {
+            Groups.findById(req.params.groupId)
+            .then((group) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.json(admin.groups);
+                res.json(group);
             },err=>next(err))
             .catch((err) => next(err)); 
         })
     });
-});
 
+});
 groupRouter.route('/:groupId/test')
 .post(authenticate.verifyAdmin,(req,res,next)=>{
     var Testobj={
@@ -295,7 +289,7 @@ groupRouter.route('/:groupId/test')
             group.save().then(()=>{
                 Admins.findById(req.user._id)
                 .populate('groups')
-                .then((admin) => {
+                .then((groups) => {
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
                     res.json(admin.groups);

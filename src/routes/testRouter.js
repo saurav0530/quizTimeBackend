@@ -25,14 +25,13 @@ connect.then((db) => {
 // Router to start exam and initialize attendance
 testRouter.route('/:groupid/start/:testid')
 .get(authenticate.verifyUser,(req, res, next) => {
-    console.log('1');
     var message, response, temp
     Groups.findById(req.params.groupid).then(async group =>{
         var check = 0
         for(var i=0; i<group.members.length; i++)
         {
             var students = group.members[i]
-            // console.log(`${students.userID}`==req.user._id)
+            //console.log(`${students.userID}`==req.user._id)
             if(`${students.userID}` == req.user._id)
             {
                 var student = {
@@ -65,7 +64,7 @@ testRouter.route('/:groupid/start/:testid')
                         var check = 0
                         for(var j=0; j<test.studentMarks.length; j++)
                         {
-                            if(`${test.studentMarks[j].userID}` === req.user._id)
+                            if(`${test.studentMarks[j].userID}` == req.user._id)
                             {
                                 check++;
                             }
@@ -80,8 +79,12 @@ testRouter.route('/:groupid/start/:testid')
                         }
                         else
                         {
-                            test.studentMarks.push(student)
-                            await Tests.findByIdAndUpdate({_id : req.params.testid}, {studentMarks : test.studentMarks},(err, result) =>{
+                            await Tests.updateOne(
+                                {_id : req.params.testid},
+                                {
+                                    $addToSet : {studentMarks : student}
+                                },
+                                (err, result) =>{
                                 console.log(`Error : ${err}`,'\n', `Result : Attendance made ${req.user._id}`)
                             })
                             response = {
@@ -93,11 +96,10 @@ testRouter.route('/:groupid/start/:testid')
                     }
                     return response
                 })
-                console.log(temp);
+                break
             }
+            console.log(temp)
         }
-        console.log(req.user._id)
-        console.log(temp)
         res.status(200).send(temp)
     }) 
 })
@@ -127,6 +129,7 @@ testRouter.route('/:testid/:response/:qno')
     Tests.findById(req.params.testid).then(async test =>{
         if(req.params.qno > 1)
         {
+            var index, data
             test.studentMarks.map((student,i) =>{
                 if(`${student.userID}` == req.user._id)
                 {
@@ -134,18 +137,23 @@ testRouter.route('/:testid/:response/:qno')
                         questionNo: req.params.qno-1,
                         markedAns: req.params.response
                     }
+                    index = i
                     student.answers.push(obj)
                     if(req.params.response == test.questions[req.params.qno-2].ans)
                     {
                         student.marks += test.questions[req.params.qno-2].marks
                     }
+                    data : student
                 }
-            })
-            
-            await Tests.findByIdAndUpdate(
-                {_id : req.params.testid}, 
-                {studentMarks : test.studentMarks},(err, result) =>{
-                console.log(`Error : ${err}`,'\n', `Result : Respnse inserted ${req.user._id} + ${req.params.qno - 1}`)
+                Tests.updateOne(
+                    {_id : req.params.testid, 'studentMarks.userID' : req.user._id},
+                    {
+                        $set:{
+                            'studentMarks.$' : student
+                        }
+                    }
+                ).then(res => console.log(`Result : Response inserted ${req.user._id} + ${req.params.qno - 1}`))
+                .catch(err => console.log(`Error : ${err}`))
             })
         }
         if(test.questions.length === (req.params.qno-1))
