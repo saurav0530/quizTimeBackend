@@ -15,6 +15,8 @@ const registerRouter = require("./routes/registerRouter");
 const testRouter = require("./routes/testRouter")
 const studentRouter = require("./routes/studentRouter")
 const adminRouter = require("./routes/adminRouter")
+const createTestRouter=require("./routes/createTestRouter");
+
 const app = express()
 
 var passport = require('passport');
@@ -45,7 +47,8 @@ app.use('/groups',groupRouter);
 app.use('/register',registerRouter);
 app.use('/tests',testRouter);
 app.use('/student',studentRouter)
-app.use('/admin',adminRouter)
+app.use('/admin',adminRouter);
+app.use('/createtest',createTestRouter);
 app.get('/',(req, res)=>{
     res.send('Hello from Quiz-time server !!!')
 })

@@ -63,11 +63,16 @@ studentRouter.route('/:testid/getCompletedQuestions')
 .get(authenticate.verifyUser,(req, res, next) => {
     Tests.findById(req.params.testid).then(test =>{
         var response
+        var remainingTime = (test.startDate.getTime() + (test.duration * 60000))
         for(var j=0; j<test.studentMarks.length; j++)
         {
-            if(`${test.studentMarks[j].userID}` == req.user._id)
+            if((`${test.studentMarks[j].userID}` == req.user._id) && (Date.now() >= remainingTime))
             {
                 response = {
+                    title:test.title,
+                    startDate:test.startDate,
+                    duration:test.duration,
+                    subject:test.subject,
                     questions : test.questions,
                     response : test.studentMarks[j].answers,
                     marksObtained : test.studentMarks[j].marks,
@@ -75,8 +80,10 @@ studentRouter.route('/:testid/getCompletedQuestions')
                 }
             }
         }
-        console.log(response);
-        res.status(200).send(response)
+        if(!response)
+            res.status(401).send({warningMssg : "You are not authorised to see the results now. Try again later once test finishes."})
+        else
+            res.status(200).send(response)
     })
 })
 });

@@ -9,7 +9,7 @@ const Groups= require('../models/group');
 const Users= require('../models/user');
 const Admins= require('../models/admin');
 const Tests= require('../models/test');
-
+const authenticate=require('../authenticate');
 const constants=require('./../../constants');
 const connect = mongoose.connect(constants.mongoURL);
 const createTestRouter=express.Router();
@@ -48,19 +48,23 @@ connect.then((db) => {
             },err=>next(err))
         }, (err) => next(err))
         .catch((err) => next(err));  
-    })
+    });
+    createTestRouter.route('/edit/:testId')
     .put(authenticate.verifyAdmin,(req,res,next)=>{
-        // var Testobj={
-        //     title:req.body.title,
-        //     createdBy:req.user._id,
-        //     duration: req.body.duration,
-        //     subject:req.body.subject,
-        //     startDate:req.body.startDate,
-        //     // totalMarks:req.body.totalMarks,
-        //     // questions:req.body.questions,
-        // }
-        Tests.findByIdAndUpdate(req.body.testId,req.body)
+        var Testobj={
+            title:req.body.title,
+            // createdBy:req.user._id,
+            duration: req.body.duration,
+            subject:req.body.subject,
+            startDate:req.body.startDate,
+            // totalMarks:req.body.totalMarks,
+            // questions:req.body.questions,
+        }
+        Tests.findByIdAndUpdate(req.params.testId,{
+            $set:Testobj
+        })
         .then((test) => {
+            
             
             console.log('Test Updated ', test);
             // Groups.findById(req.params.groupId).then(group=>{
@@ -89,12 +93,12 @@ createTestRouter.route('/:testId/question')
             C:req.body.C,
             D:req.body.D,
             ans:req.body.ans,
-            marks:req.body.marks,
+            marks:Number(req.body.marks),
            // totalMarks:req.body.totalMarks  // questions:req.body.questions,
         }
         Tests.findById(req.params.testId)
         .then((test) => {
-            test.totalMarks= test.totalMarks,
+            test.totalMarks= Number(test.totalMarks+question.marks),
             test.questions.push(question);
             test.save().then(()=>{
                 console.log('Question Added ', test);
@@ -150,11 +154,18 @@ createTestRouter.route('/:testId/question')
                 // })
 
             // })
-            
-            
             },err=>next(err))
         }, (err) => next(err))
         .catch((err) => next(err));  
+});
+createTestRouter.route('/:testId')
+.get(authenticate.verifyAdmin,(req,res,next)=>{
+    Tests.findById(req.params.testId).then((test)=>{
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(test);
+    },err=>next(err))
+    .catch(err=>next(err));
 });
 
 

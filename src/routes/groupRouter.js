@@ -130,15 +130,29 @@ groupRouter.route('/:groupId')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.delete((req, res, next) => {
-    Groups.findByIdAndRemove(req.params.groupId)
-    .then((resp) => {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json(resp);
-    }, (err) => next(err))
-    .catch((err) => next(err)
-)});
+.delete(authenticate.verifyAdmin,(req, res, next) => {
+    Groups.findByIdAndRemove(req.params.groupId).then((resp)=>{
+        // Admins.findById(req.user._id).then((admin)=>{
+        //     admin.groups.pull(req.params.groupId);
+        //     admin.save().then(()=>{
+        //         res.redirect('/groups/admingroups');
+        //     })
+        // })
+        Admins.findByIdAndUpdate(req.user._id,{$pull:{groups:req.params.groupId}},(err,data)=>{
+            if(err)
+            {
+                res.status(500).json({error:"Error in Deletion "});
+            }
+            else{
+                res.redirect('/groups/admingroups');
+            }
+        })
+    })
+    // .then((resp) => {
+    
+    // }, (err) => next(err))
+    // .catch((err) => next(err)
+});
 
 groupRouter.route('/:groupId/member')
 .get((req,res,next) => {

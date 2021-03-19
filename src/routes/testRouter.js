@@ -25,12 +25,15 @@ connect.then((db) => {
 // Router to start exam and initialize attendance
 testRouter.route('/:groupid/start/:testid')
 .get(authenticate.verifyUser,(req, res, next) => {
+    // console.log(req);
     var message, response, temp
     Groups.findById(req.params.groupid).then(async group =>{
         var check = 0
+        console.log(group);
         for(var i=0; i<group.members.length; i++)
         {
             var students = group.members[i]
+            console.log(students);
             //console.log(`${students.userID}`==req.user._id)
             if(`${students.userID}` == req.user._id)
             {
@@ -96,11 +99,11 @@ testRouter.route('/:groupid/start/:testid')
                     }
                     return response
                 })
-                break
+                 break
             }
             console.log(temp)
         }
-        res.status(200).send(temp)
+        res.status(200).json(temp)
     }) 
 })
 

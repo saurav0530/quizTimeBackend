@@ -23,7 +23,7 @@ const testSchema = new Schema({
     },
     totalMarks:{
         type:Number,
-        // required:true,
+        default:0
     },
     studentMarks:[{
         name:{

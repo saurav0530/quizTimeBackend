@@ -40,7 +40,30 @@ adminRouter.route('/results/:testid')
         res.status(200).send(response)
     })
 })
+adminRouter.route('/:testid/getCompletedQuestions/:studentId')
+.get(authenticate.verifyAdmin,(req, res, next) => {
+    Tests.findById(req.params.testid).then(test =>{
+        var response
+        for(var j=0; j<test.studentMarks.length; j++)
+        {
+            if(`${test.studentMarks[j].userID}` == req.params.studentId)
+            {
+                response = {
+                    title:test.title,
+                    startDate:test.startDate,
+                    duration:test.duration,
+                    subject:test.subject,
+                    questions : test.questions,
+                    response : test.studentMarks[j].answers,
+                    marksObtained : test.studentMarks[j].marks,
+                    totalMarks : test.totalMarks
+                }
+            }
+        }
+        console.log(response);
+        res.status(200).send(response)
+    })
+})
 });
-
 
 module.exports = adminRouter;
