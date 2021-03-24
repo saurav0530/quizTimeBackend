@@ -6,6 +6,7 @@
 
 
 const express = require("express");
+const fileupload = require("express-fileupload")
 const bodyParser = require("body-parser")
  const cors= require('cors');
 // const session = require('express-session')
@@ -25,6 +26,7 @@ var authenticate = require('./authenticate');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
+app.use(fileupload())
 
 
 app.use(express.json());

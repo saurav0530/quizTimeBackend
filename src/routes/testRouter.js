@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors= require('cors');
+const fs = require('fs')
 
 const Groups= require('../models/group');
 const Users= require('../models/user');
@@ -107,6 +108,22 @@ testRouter.route('/:groupid/start/:testid')
     }) 
 })
 
+testRouter.route('/:testId/testPaper')
+.get((req,res,next)=>{
+    Tests.findById(req.params.testId).then(test =>{
+        var file = test.questionPDF
+        fs.writeFileSync("test.pdf", file,  "buffer",function(err) {
+            if(err) {
+                console.log(err);
+            } else {
+                console.log("The file was saved!");
+            }
+        });
+        res.sendFile('/home/danzer/Desktop/quizTimeBackend/test.pdf')
+    })
+})
+
+
 testRouter.route('/:testid/:qno')
 .get( (req, res, next) => {
     Tests.findById(req.params.testid).then(test =>{
@@ -176,7 +193,6 @@ testRouter.route('/:testid/:response/:qno')
             res.redirect(`/tests/${req.params.testid}/${req.params.qno - 1}`)
     })
 })
- 
 });
 
 

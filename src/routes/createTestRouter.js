@@ -27,8 +27,8 @@ connect.then((db) => {
             duration: req.body.duration,
             subject:req.body.subject,
             startDate:req.body.startDate,
-            // totalMarks:req.body.totalMarks,
-            // questions:req.body.questions,
+            testType:req.body.testType,
+            isQuestionInPDF : req.body.isQuestionInPDF
         }
         Tests.create(Testobj)
         .then((test) => {
@@ -49,6 +49,20 @@ connect.then((db) => {
         }, (err) => next(err))
         .catch((err) => next(err));  
     });
+    createTestRouter.route('/:groupId/uploadAssignment/:testId')
+    .post((req,res,next)=>{
+        Tests.findById(req.params.testId)
+        .then((test) => {
+            test.questionPDF = req.files.file.data
+            test.save().then(()=>{
+                console.log('Question Added ', test);
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(test);
+            },err=>next(err))
+        }, (err) => next(err))
+        .catch((err) => next(err));
+    })
     createTestRouter.route('/edit/:testId')
     .put(authenticate.verifyAdmin,(req,res,next)=>{
         var Testobj={
@@ -57,6 +71,7 @@ connect.then((db) => {
             duration: req.body.duration,
             subject:req.body.subject,
             startDate:req.body.startDate,
+            testType:req.body.testType,
             // totalMarks:req.body.totalMarks,
             // questions:req.body.questions,
         }
@@ -85,16 +100,37 @@ connect.then((db) => {
     });
 createTestRouter.route('/:testId/question')
     .post(authenticate.verifyAdmin,(req,res,next)=>{
-        var question={
-            questionNo: req.body.questionNo,
-            question:req.body.question,
-            A:req.body.A,
-            B:req.body.B,
-            C:req.body.C,
-            D:req.body.D,
-            ans:req.body.ans,
-            marks:Number(req.body.marks),
+        var question;
+        if(req.body.questionType==='1')
+        {
+            question={
+                questionNo: req.body.questionNo,
+                question:req.body.question,
+                questionType:req.body.questionType,
+                A:req.body.A,
+                B:req.body.B,
+                C:req.body.C,
+                D:req.body.D,
+                ans:req.body.ans,
+                marks:req.body.marks,
+
+            }
            // totalMarks:req.body.totalMarks  // questions:req.body.questions,
+        }
+        if(req.body.questionType==='2'||req.body.questionType==='3')
+        {
+            question={
+                questionNo: req.body.questionNo,
+                question:req.body.question,
+                questionType:req.body.questionType,
+                // A:req.body.A,
+                // B:req.body.B,
+                // C:req.body.C,
+                // D:req.body.D,
+                // ans:req.body.ans,
+                marks:req.body.marks,
+
+            }
         }
         Tests.findById(req.params.testId)
         .then((test) => {
@@ -124,16 +160,35 @@ createTestRouter.route('/:testId/question')
 
 createTestRouter.route('/:testId/question')
     .put(authenticate.verifyAdmin,(req,res,next)=>{
-        var question={
-            questionNo: req.body.questionNo,
-            question:req.body.question,
-            A:req.body.A,
-            B:req.body.B,
-            C:req.body.C,
-            D:req.body.D,
-            ans:req.body.ans,
-            marks:req.body.marks,
+        var question;
+        if(req.body.questionType==='1')
+        {
+            question={
+                questionNo: req.body.questionNo,
+                question:req.body.question,
+                A:req.body.A,
+                B:req.body.B,
+                C:req.body.C,
+                D:req.body.D,
+                ans:req.body.ans,
+                marks:req.body.marks,
+
+            }
            // totalMarks:req.body.totalMarks  // questions:req.body.questions,
+        }
+        if(req.body.questionType==='2'||req.body.questionType==='3')
+        {
+            question={
+                questionNo: req.body.questionNo,
+                question:req.body.question,
+                // A:req.body.A,
+                // B:req.body.B,
+                // C:req.body.C,
+                // D:req.body.D,
+                // ans:req.body.ans,
+                marks:req.body.marks,
+
+            }
         }
         Tests.findById(req.params.testId)
         .then((test) => {
@@ -168,7 +223,15 @@ createTestRouter.route('/:testId')
     .catch(err=>next(err));
 });
 
-
+// createTestRouter.route('/:testId/pdfUpload')
+// .post(authenticate.verifyAdmin,(req,res,next)=>{
+//     Tests.findById(req.params.testId).then((test)=>{
+//         res.statusCode = 200;
+//         res.setHeader('Content-Type', 'application/json');
+//         res.json(test);
+//     },err=>next(err))
+//     .catch(err=>next(err));
+// });
 
 
 

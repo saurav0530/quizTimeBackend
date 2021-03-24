@@ -25,6 +25,9 @@ const testSchema = new Schema({
         type:Number,
         default:0
     },
+    testType:{
+        type:String,
+    },
     studentMarks:[{
         name:{
             type: String,
@@ -49,12 +52,28 @@ const testSchema = new Schema({
             markedAns:{
                 type:String,
             }
-        }]
+        }],
+        file:{
+            type:Object,
+            default:{}
+        },
     }],
+    isQuestionInPDF:{
+        type: Boolean,
+        required: true,
+        default: false
+    },
+    questionPDF:{
+        type: Buffer
+    },
     questions:[{
         questionNo:{
             type:Number,
             required:true
+        },
+        questionType:{
+            type:String,
+            default:'1'
         },
         question:{
             type:String,
@@ -62,23 +81,23 @@ const testSchema = new Schema({
         },
         A:{
             type:String,
-            required:true
+            
         },
         B:{
             type:String,
-            required:true
+            // required:true
         },
         C:{
             type:String,
-            required:true
+            // required:true
         },
         D:{
             type:String,
-            required:true
+            // required:true
         },
         ans:{
             type:String,
-            required:true
+            // required:true
         },
         marks:{
             type:Number,
