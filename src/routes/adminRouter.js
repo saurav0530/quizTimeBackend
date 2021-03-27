@@ -71,7 +71,7 @@ adminRouter.route('/evaluate')
                         }
                     ).then(() => {
                         console.log(`Result : Question evaluated ${req.body.studentId} + ${req.body.questionIndex+1}`)
-                        res.redirect(`admin/${req.body.testid}/getCompletedQuestions/${req.body.studentId}`)
+                        res.redirect(`/admin/${req.body.testid}/getCompletedQuestions/${req.body.studentId}`)
                         })
                     .catch(err => console.log(`Error : ${err}`))
                 }
@@ -115,11 +115,13 @@ adminRouter.route('/:testid/getCompletedQuestions/:studentId')
                     startDate:test.startDate,
                     duration:test.duration,
                     subject:test.subject,
+                    isQuestionInPDF:test.isQuestionInPDF,
                     questions : test.questions,
                     isEvaluated:test.studentMarks[j].isEvaluated,
                     response : test.studentMarks[j].answers,
                     marksObtained : test.studentMarks[j].marks,
-                    totalMarks : test.totalMarks
+                    totalMarks : test.totalMarks,
+                    totalQuestions:test.totalQuestions
                 }
             }
         }
