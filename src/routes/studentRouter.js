@@ -40,6 +40,7 @@ studentRouter.route('/:groupid/getTestByGroup')
                 testInfoArray.push({
                     _id:test._id,
                     title : test.title,
+                    testType:test.testType,
                     duration : test.duration,
                     subject : test.subject,
                     startDate : test.startDate,
@@ -66,22 +67,24 @@ studentRouter.route('/:testid/getCompletedQuestions')
         var remainingTime = (test.startDate.getTime() + (test.duration * 60000))
         for(var j=0; j<test.studentMarks.length; j++)
         {
-            if((`${test.studentMarks[j].userID}` == req.user._id) && (Date.now() >= remainingTime))
+            if((`${test.studentMarks[j].userID}` == req.user._id) && (Date.now() >= remainingTime)&&test.studentMarks[j].isEvaluated)
             {
                 response = {
                     title:test.title,
                     startDate:test.startDate,
+                    testType:test.testType,
                     duration:test.duration,
                     subject:test.subject,
                     questions : test.questions,
                     response : test.studentMarks[j].answers,
                     marksObtained : test.studentMarks[j].marks,
+                    isQuestionInPDF:test.isQuestionInPDF,
                     totalMarks : test.totalMarks
                 }
             }
         }
         if(!response)
-            res.status(401).send({warningMssg : "You are not authorised to see the results now. Try again later once test finishes."})
+            res.status(401).send({warningMssg : "You are not authorised to see the results now. Try again later once test and evaluation finishes."})
         else
             res.status(200).send(response)
     })

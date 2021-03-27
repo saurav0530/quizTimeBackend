@@ -9,6 +9,10 @@ const testSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin'
     },
+    totalQuestions:{
+        type:Number,
+        default:0
+    },
     duration:{
         type:Number,
         required:true
@@ -45,17 +49,29 @@ const testSchema = new Schema({
             type:Number,
             default:0,
         },
+        isEvaluated:{
+            type:Boolean,
+            default:false,
+        },
         answers:[{
             questionNo:{
                 type:Number,
             },
             markedAns:{
                 type:String,
+                default:''
+            },
+            marks:{
+                type:Number,
+                default:0
+            },
+            remarks:{
+                type:String,
+                default:''
             }
         }],
         file:{
-            type:Object,
-            default:{}
+            type:Buffer
         },
     }],
     isQuestionInPDF:{

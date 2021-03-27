@@ -28,7 +28,9 @@ connect.then((db) => {
             subject:req.body.subject,
             startDate:req.body.startDate,
             testType:req.body.testType,
-            isQuestionInPDF : req.body.isQuestionInPDF
+            isQuestionInPDF : req.body.isQuestionInPDF,
+            totalQuestions:req.body.totalQuestions,
+            totalMarks:req.body.totalMarks,
         }
         Tests.create(Testobj)
         .then((test) => {
@@ -123,36 +125,23 @@ createTestRouter.route('/:testId/question')
                 questionNo: req.body.questionNo,
                 question:req.body.question,
                 questionType:req.body.questionType,
-                // A:req.body.A,
-                // B:req.body.B,
-                // C:req.body.C,
-                // D:req.body.D,
-                // ans:req.body.ans,
                 marks:req.body.marks,
 
             }
         }
         Tests.findById(req.params.testId)
         .then((test) => {
-            test.totalMarks= Number(test.totalMarks+question.marks),
+            console.log("Posting the question");
+            test.totalMarks= Number(test.totalMarks)+Number(question.marks);
+            test.totalQuestions=Number(test.totalQuestions)+1;
             test.questions.push(question);
             test.save().then(()=>{
-                console.log('Question Added ', test);
-                // Groups.findById(req.params.groupId).then(group=>{
-                // group.tests.push(test._id);
-                // group.save().then(()=>{
-                    // Admins.findById(req.user._id)
-                    // .populate('groups')
-                    // .then((admin) => {
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(test);
-                    // })
-                // })
-
-            // })
-            
-            
+                Tests.findById(req.params.testId).then((testnew)=>{
+                    console.log('Question Added ', testnew);
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.json(testnew);
+                })
             },err=>next(err))
         }, (err) => next(err))
         .catch((err) => next(err));  
@@ -160,6 +149,7 @@ createTestRouter.route('/:testId/question')
 
 createTestRouter.route('/:testId/question')
     .put(authenticate.verifyAdmin,(req,res,next)=>{
+        console.log("Edit Question Details");
         var question;
         if(req.body.questionType==='1')
         {
@@ -172,22 +162,14 @@ createTestRouter.route('/:testId/question')
                 D:req.body.D,
                 ans:req.body.ans,
                 marks:req.body.marks,
-
             }
-           // totalMarks:req.body.totalMarks  // questions:req.body.questions,
         }
         if(req.body.questionType==='2'||req.body.questionType==='3')
         {
             question={
                 questionNo: req.body.questionNo,
                 question:req.body.question,
-                // A:req.body.A,
-                // B:req.body.B,
-                // C:req.body.C,
-                // D:req.body.D,
-                // ans:req.body.ans,
                 marks:req.body.marks,
-
             }
         }
         Tests.findById(req.params.testId)
@@ -195,26 +177,18 @@ createTestRouter.route('/:testId/question')
             test.totalMarks= req.body.totalMarks,
             test.questions[question.questionNo-1]=question;
             test.save().then(()=>{
-                console.log('Question Added ', test);
-                // Groups.findById(req.params.groupId).then(group=>{
-                // group.tests.push(test._id);
-                // group.save().then(()=>{
-                    // Admins.findById(req.user._id)
-                    // .populate('groups')
-                    // .then((admin) => {
+                console.log('Question Edited ', test);
                         res.statusCode = 200;
                         res.setHeader('Content-Type', 'application/json');
                         res.json(test);
-                    // })
-                // })
-
-            // })
             },err=>next(err))
         }, (err) => next(err))
         .catch((err) => next(err));  
 });
 createTestRouter.route('/:testId')
 .get(authenticate.verifyAdmin,(req,res,next)=>{
+
+    console.log("Fetching Test Details");
     Tests.findById(req.params.testId).then((test)=>{
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');

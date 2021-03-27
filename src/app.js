@@ -56,8 +56,6 @@ app.get('/',(req, res)=>{
 })
 // app.get('/login',(req,res)=>{
 //     res.send('Hi'+ req.session.passport)
-// })
-
 app.post('/login/user',passport.authenticate('user-local',{session:false}) ,(req,res)=>{
     console.log(req.user);
     var token = authenticate.getToken({_id: req.user._id});

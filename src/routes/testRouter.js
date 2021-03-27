@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors= require('cors');
 const fs = require('fs')
+const path = require('path')
 
 const Groups= require('../models/group');
 const Users= require('../models/user');
@@ -21,6 +22,7 @@ testRouter.use(cors());
 
 connect.then((db) => {
     console.log("Connected correctly to server");
+    // console.log(path.join(__dirname,'/../../test.pdf'))
 
 
 // Router to start exam and initialize attendance
@@ -83,6 +85,24 @@ testRouter.route('/:groupid/start/:testid')
                         }
                         else
                         {
+                            console.log("Run")
+                            var NoOfQuestions;
+                            NoOfQuestions=test.totalQuestions
+                            
+                            if(test.questions.length)
+                            {
+                                NoOfQuestions=test.questions.length
+                            }
+                            console.log(NoOfQuestions)
+                            for(var j=1;j<=NoOfQuestions;j++)
+                            {
+                                student.answers.push({questionNo:j})
+                            }
+                            if(test.testType==='1')
+                            {
+                                student.isEvaluated=true
+                            }
+
                             await Tests.updateOne(
                                 {_id : req.params.testid},
                                 {
@@ -93,6 +113,7 @@ testRouter.route('/:groupid/start/:testid')
                             })
                             response = {
                             totalNumberOfQuestions : test.questions.length,
+                            isQuestionInPDF:test.isQuestionInPDF,
                             remainingTime : remainingTime,
                             message : ''
                             }
@@ -102,7 +123,7 @@ testRouter.route('/:groupid/start/:testid')
                 })
                  break
             }
-            console.log(temp)
+            // console.log(temp)
         }
         res.status(200).json(temp)
     }) 
@@ -111,18 +132,27 @@ testRouter.route('/:groupid/start/:testid')
 testRouter.route('/:testId/testPaper')
 .get((req,res,next)=>{
     Tests.findById(req.params.testId).then(test =>{
-        var file = test.questionPDF
-        fs.writeFileSync("test.pdf", file,  "buffer",function(err) {
-            if(err) {
-                console.log(err);
-            } else {
-                console.log("The file was saved!");
+        if(test.isQuestionInPDF)
+        {
+            var file = test.questionPDF
+            var filename=`static/${req.params.testId}.pdf`;
+            fs.writeFileSync(filename, file,  "buffer",function(err) {
+                if(err) {
+                    console.log(err);
+                } else {
+                    console.log("The file was saved!");
+                }
+            });
+            res.sendFile(path.join(__dirname,`/../../${filename}`))
+        }
+        else{
+            var response = {
+                questions: test.questions
             }
-        });
-        res.sendFile('/home/danzer/Desktop/quizTimeBackend/test.pdf')
+            res.status(200).send(response)
+        }
     })
 })
-
 
 testRouter.route('/:testid/:qno')
 .get( (req, res, next) => {
@@ -131,21 +161,58 @@ testRouter.route('/:testid/:qno')
         {
             var question = {
                 number : test.questions[req.params.qno].questionNo,
+                questionType:test.questions[req.params.qno].questionType,
                 question : test.questions[req.params.qno].question,
-                A : test.questions[req.params.qno].A,
-                B : test.questions[req.params.qno].B,
-                C : test.questions[req.params.qno].C,
-                D : test.questions[req.params.qno].D,
                 marks : test.questions[req.params.qno].marks
             }
+            if(question.questionType==='1')
+            {
+                question.A = test.questions[req.params.qno].A,
+                question.B = test.questions[req.params.qno].B,
+                question.C = test.questions[req.params.qno].C,
+                question.D = test.questions[req.params.qno].D
+            }
+
             res.status(200).send(question)
         }
         else
             res.status(200).json("Completed !!!")
     })
 })
-testRouter.route('/:testid/:response/:qno')
-.get(authenticate.verifyUser,(req, res, next) =>{
+
+
+
+
+testRouter.route('/:testId/uploadAssignment')
+.post(authenticate.verifyUser,(req,res,next)=>{
+    Tests.findById(req.params.testId).then(test =>{
+        for(var j=0; j<test.studentMarks.length; j++)
+        {
+            if(`${test.studentMarks[j].userID}` == req.user._id)
+            {
+                test.studentMarks[j].file = req.files.file.data
+                Tests.updateOne(
+                    {_id : req.params.testId, 'studentMarks.userID' : req.user._id},
+                    {
+                        $set:{
+                            'studentMarks.$.file' : req.files.file.data
+                        }
+                    }
+                ).then(()=> {
+                    console.log(`Result : Response inserted ${req.user._id} + pdf`)
+                    res.status(200).json('Response added successfully')
+                })
+                .catch(err => console.log(`Error : ${err}`))
+            }
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err))
+})
+
+
+testRouter.route('/:testid/next/:qno')
+.post(authenticate.verifyUser,(req, res, next) =>{
+    var response=req.body.ans;
     Tests.findById(req.params.testid).then(async test =>{
         if(req.params.qno > 1)
         {
@@ -155,38 +222,58 @@ testRouter.route('/:testid/:response/:qno')
                 {
                     var obj = {
                         questionNo: req.params.qno-1,
-                        markedAns: req.params.response
+                        markedAns: response
                     }
-                    index = i
-                    student.answers.push(obj)
-                    if(req.params.response == test.questions[req.params.qno-2].ans)
+                    // console.log(obj);
+                    index = i;
+                    if(student.answers[obj.questionNo-1].markedAns!=obj.markedAns)
                     {
-                        student.marks += test.questions[req.params.qno-2].marks
-                    }
-                    data : student
-                }
-                Tests.updateOne(
-                    {_id : req.params.testid, 'studentMarks.userID' : req.user._id},
-                    {
-                        $set:{
-                            'studentMarks.$' : student
+                        // console.log("Going to update marks")
+                        student.answers[obj.questionNo-1].markedAns=obj.markedAns;
+                        if(test.questions[req.params.qno-2].questionType==='1')
+                        {
+                            if(response == test.questions[req.params.qno-2].ans)
+                            {
+                                student.answers[obj.questionNo-1].marks=test.questions[req.params.qno-2].marks
+                                student.marks += test.questions[req.params.qno-2].marks
+                            }
+                         }
+                    }   // data : student
+                    // console.log(student);
+                    Tests.updateOne(
+                        {_id : req.params.testid, 'studentMarks.userID' : req.user._id},
+                        {
+                            $set:{
+                                'studentMarks.$' : student
+                            }
                         }
-                    }
-                ).then(res => console.log(`Result : Response inserted ${req.user._id} + ${req.params.qno - 1}`))
-                .catch(err => console.log(`Error : ${err}`))
+                    ).then(res => console.log(`Result : Response inserted ${req.user._id} + ${req.params.qno - 1}`))
+                    .catch(err => console.log(`Error : ${err}`))
+                }
             })
         }
         if(test.questions.length === (req.params.qno-1))
         {
-            var result
-            await Tests.findById(req.params.testid).then(test =>{
-                test.studentMarks.map((student,i) =>{
-                    if(`${student.userID}` == req.user._id)
-                    {
-                        result = student
-                    }
-                })
-            })
+            // await Tests.findById(req.params.testid).then(test =>{
+            //     if(test.testType==='1')
+            //     {
+            //         test.studentMarks.map((student,i) =>{
+            //             if(`${student.userID}` == req.user._id)
+            //             {
+            //                 result = student
+            //             }
+            //         })
+
+            //     }
+            //     else
+            //     {
+            //     }
+               
+            // })
+            var result={
+                finished:true,
+                Message:"Test has been sucessfully Completed"
+            }
             res.status(200).send(result)
         }
         else
