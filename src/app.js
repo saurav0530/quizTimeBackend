@@ -42,8 +42,8 @@ app.use('/student',studentRouter)       //A router for student's request to get 
 app.use('/admin',adminRouter);      //Router to handle admin's request to see test result and evaluation
 app.use('/createtest',createTestRouter);        //Router to handle request related to creation and edit of test paper
 app.get('/',(req, res)=>{
-    res.sendFile('E:\Backend\quizTimeBackend\static\606bcc0fd1143b120cdf6e6e.pdf')
-    //res.send('Hello from Quiz-time server !!!')
+   
+    res.send('Hello from Quiz-time server !!!')
 })
 
 app.post('/login/user',passport.authenticate('user-local',{session:false}) ,(req,res)=>{
