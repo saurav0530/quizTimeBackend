@@ -132,12 +132,6 @@ groupRouter.route('/:groupId')
 })
 .delete(authenticate.verifyAdmin,(req, res, next) => {
     Groups.findByIdAndRemove(req.params.groupId).then((resp)=>{
-        // Admins.findById(req.user._id).then((admin)=>{
-        //     admin.groups.pull(req.params.groupId);
-        //     admin.save().then(()=>{
-        //         res.redirect('/groups/admingroups');
-        //     })
-        // })
         Admins.findByIdAndUpdate(req.user._id,{$pull:{groups:req.params.groupId}},(err,data)=>{
             if(err)
             {
@@ -148,10 +142,7 @@ groupRouter.route('/:groupId')
             }
         })
     })
-    // .then((resp) => {
-    
-    // }, (err) => next(err))
-    // .catch((err) => next(err)
+
 });
 
 groupRouter.route('/:groupId/member')
@@ -284,50 +275,6 @@ groupRouter.route('/:groupId/removereq')
     });
 
 });
-groupRouter.route('/:groupId/test')
-.post(authenticate.verifyAdmin,(req,res,next)=>{
-    var Testobj={
-        title:req.body.title,
-        createdBy:req.user._id,
-        duration: req.body.duration,
-        subject:req.body.subject,
-        startDate:req.body.startDate,
-        totalMarks:req.body.totalMarks,
-        questions:req.body.questions,
-    }
-    Tests.create(Testobj)
-    .then((test) => {
-        console.log('Test Created ', test);
-        Groups.findById(req.params.groupId).then(group=>{
-            group.tests.push(test._id);
-            group.save().then(()=>{
-                Admins.findById(req.user._id)
-                .populate('groups')
-                .then((groups) => {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json(admin.groups);
-                })
-            })
-        
-        },err=>next(err))
-    }, (err) => next(err))
-    .catch((err) => next(err));  
-});
-// groupRouter.route('/student/:groupId')
-// .get(authenticate.verifyUser, (req,res,next)=>{
-//     Groups.findById(req.params.groupId)
-//     .populate('tests').then(group=>{
-//         var grouptoreturn={
-//             name:group.name,
-//             _id:group._id,
-
-//         }
-//         res.statusCode = 200;
-//         res.setHeader('Content-Type', 'application/json');
-//         res.json(group);
-//     },err=>next(err))
-// });
 
 
 module.exports=groupRouter;

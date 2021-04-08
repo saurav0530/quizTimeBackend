@@ -5,9 +5,6 @@ const cors= require('cors');
 const fs = require('fs')
 const path = require('path')
 
-const Groups= require('../models/group');
-const Users= require('../models/user');
-const Admins= require('../models/admin');
 const Tests= require('../models/test');
 
 const constants=require('./../../constants');
@@ -15,7 +12,8 @@ const connect = mongoose.connect(constants.mongoURL,{ useNewUrlParser: true,useU
 const adminRouter=express.Router();
 const authenticate=require('../authenticate');
 const admin = require('../models/admin');
-const { initialize } = require('passport');
+const { urlencoded } = require('body-parser');
+
 
 adminRouter.use(bodyParser.json());
 adminRouter.use(cors());
@@ -45,14 +43,7 @@ adminRouter.route('/results/:testid')
 adminRouter.route('/evaluate')
 .post(authenticate.verifyAdmin,(req,res,next)=>{
     console.log(req.body);
-    // var evaluatedData={
-    //     marks:this.state.test.response[index].marks,
-    //     remarks:this.state.test.response[index].remarks,
-    //     questionIndex:index,
-    //     studentId:this.props.match.params.studentId,
-    //     testid:this.props.match.params.testId
-    // }
-
+    
     Tests.findById(req.body.testid).then(async test =>{
             test.studentMarks.map((student,i) =>{
                 if(`${student.userID}` == req.body.studentId)
@@ -132,22 +123,12 @@ adminRouter.route('/:testid/getCompletedQuestions/:studentId')
 
 
 adminRouter.route('/:testId/testPaper')
-.get((req,res,next)=>{
+.get(authenticate.verifyAdmin,(req,res,next)=>{
     console.log("File Request");
     Tests.findById(req.params.testId).then(test =>{
-        var filename
         if(test.isQuestionInPDF)
         {
-            var file = test.questionPDF
             var filename=`static/${req.params.testId}.pdf`;
-            // filename=`${req.params.testId}.pdf`
-            fs.writeFileSync(filename, file,  "buffer",function(err) {
-                if(err) {
-                    console.log(err);
-                } else {
-                    console.log("The file was saved!");
-                }
-            });
             res.sendFile(path.join(__dirname,`/../../${filename}`))
         }
         else{
@@ -159,7 +140,7 @@ adminRouter.route('/:testId/testPaper')
     })
 })
 adminRouter.route('/:testId/testPaper/:studentId')
-.get((req,res,next)=>{
+.get(authenticate.verifyAdmin,(req,res,next)=>{
     Tests.findById(req.params.testId).then(test =>{
         var filename
         for(var j=0; j<test.studentMarks.length; j++)
@@ -167,17 +148,10 @@ adminRouter.route('/:testId/testPaper/:studentId')
 
             if(`${test.studentMarks[j].userID}` == req.params.studentId)
             {
-                var file = test.studentMarks[j].file
                 filename=`static/${req.params.studentId}_${req.params.testId}.pdf`
-                fs.writeFileSync(filename, file,  "buffer",function(err) {
-                if(err) {
-                    console.log(err);
-                } else {
-                    console.log("The file was saved!");
-                }
-            });
+            };
             res.sendFile(path.join(__dirname,`/../../${filename}`))
-            }
+            
         }
     })
 })

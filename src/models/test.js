@@ -71,7 +71,7 @@ const testSchema = new Schema({
             }
         }],
         file:{
-            type:Buffer
+            type:String
         },
     }],
     isQuestionInPDF:{
@@ -80,7 +80,7 @@ const testSchema = new Schema({
         default: false
     },
     questionPDF:{
-        type: Buffer
+        type: String,
     },
     questions:[{
         questionNo:{

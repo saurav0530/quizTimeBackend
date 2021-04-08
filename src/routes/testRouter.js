@@ -130,19 +130,12 @@ testRouter.route('/:groupid/start/:testid')
 })
 
 testRouter.route('/:testId/testPaper')
-.get((req,res,next)=>{
+.get(authenticate.verifyUser,(req,res,next)=>{
     Tests.findById(req.params.testId).then(test =>{
         if(test.isQuestionInPDF)
         {
-            var file = test.questionPDF
             var filename=`static/${req.params.testId}.pdf`;
-            fs.writeFileSync(filename, file,  "buffer",function(err) {
-                if(err) {
-                    console.log(err);
-                } else {
-                    console.log("The file was saved!");
-                }
-            });
+            console.log((path.join(__dirname,`/../../${filename}`)));
             res.sendFile(path.join(__dirname,`/../../${filename}`))
         }
         else{
@@ -185,26 +178,38 @@ testRouter.route('/:testid/:qno')
 
 testRouter.route('/:testId/uploadAssignment')
 .post(authenticate.verifyUser,(req,res,next)=>{
-    Tests.findById(req.params.testId).then(test =>{
-        for(var j=0; j<test.studentMarks.length; j++)
-        {
-            if(`${test.studentMarks[j].userID}` == req.user._id)
+    Tests.findById(req.params.testId).then(async test =>{
+        var file = req.files.file.data
+        var filename=`static/${req.user._id}_${req.params.testId}.pdf`
+        try{
+            fs.writeFileSync(filename, file,  "buffer");
+            console.log("The file was saved!");
+            for(var j=0; j<test.studentMarks.length; j++)
             {
-                test.studentMarks[j].file = req.files.file.data
-                Tests.updateOne(
-                    {_id : req.params.testId, 'studentMarks.userID' : req.user._id},
-                    {
-                        $set:{
-                            'studentMarks.$.file' : req.files.file.data
+                if(`${test.studentMarks[j].userID}` == req.user._id)
+                {
+                    // test.studentMarks[j].file = req.files.file.data
+                    Tests.updateOne(
+                        {_id : req.params.testId, 'studentMarks.userID' : req.user._id},
+                        {
+                            $set:{
+                                'studentMarks.$.file' : filename
+                            }
                         }
-                    }
-                ).then(()=> {
-                    console.log(`Result : Response inserted ${req.user._id} + pdf`)
-                    res.status(200).json('Response added successfully')
-                })
-                .catch(err => console.log(`Error : ${err}`))
+                    ).then(()=> {
+                        console.log(`Result : Response inserted ${req.user._id} + pdf`)
+                        res.status(200).json('Response added successfully')
+                    })
+                    .catch(err => console.log(`Error : ${err}`))
+                }
             }
+        }catch{
+            console.log(err);
+            res.statusCode(609);
+            res.json({err:err})
         }
+
+        
     }, (err) => next(err))
     .catch((err) => next(err))
 })
@@ -254,22 +259,7 @@ testRouter.route('/:testid/next/:qno')
         }
         if(test.questions.length === (req.params.qno-1))
         {
-            // await Tests.findById(req.params.testid).then(test =>{
-            //     if(test.testType==='1')
-            //     {
-            //         test.studentMarks.map((student,i) =>{
-            //             if(`${student.userID}` == req.user._id)
-            //             {
-            //                 result = student
-            //             }
-            //         })
-
-            //     }
-            //     else
-            //     {
-            //     }
-               
-            // })
+           
             var result={
                 finished:true,
                 Message:"Test has been sucessfully Completed"

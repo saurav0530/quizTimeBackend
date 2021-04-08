@@ -30,32 +30,22 @@ app.use(fileupload())
 
 
 app.use(express.json());
-// app.use(passport.initialize())
-// app.use(passport.session())
-// app.use(session({
-//     secret: 'keyboard cat',
-//     resave: true,
-//     saveUninitialized: true,
-//     rolling: true,
-//     cookie: { 
-//         maxAge: 600000 
-//     }
-// }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 const port = process.env.PORT || 4000
-app.use('/groups',groupRouter);
-app.use('/register',registerRouter);
-app.use('/tests',testRouter);
-app.use('/student',studentRouter)
-app.use('/admin',adminRouter);
-app.use('/createtest',createTestRouter);
+app.use('/groups',groupRouter);         //A router to manage groups like adding/removing members and initialising a test
+app.use('/register',registerRouter);    //A router to handle registration
+app.use('/tests',testRouter);       //A router to handle requests during the exam like storing reponse to a answer and sending questions and verification before start
+app.use('/student',studentRouter)       //A router for student's request to get list of test and result sheet
+app.use('/admin',adminRouter);      //Router to handle admin's request to see test result and evaluation
+app.use('/createtest',createTestRouter);        //Router to handle request related to creation and edit of test paper
 app.get('/',(req, res)=>{
-    res.send('Hello from Quiz-time server !!!')
+    res.sendFile('E:\Backend\quizTimeBackend\static\606bcc0fd1143b120cdf6e6e.pdf')
+    //res.send('Hello from Quiz-time server !!!')
 })
-// app.get('/login',(req,res)=>{
-//     res.send('Hi'+ req.session.passport)
+
 app.post('/login/user',passport.authenticate('user-local',{session:false}) ,(req,res)=>{
     console.log(req.user);
     var token = authenticate.getToken({_id: req.user._id});
@@ -70,37 +60,7 @@ app.post('/login/admin',passport.authenticate('admin-local',{session:false}) ,(r
     res.json({success: true, token: token, status: 'You are successfully logged in!',user:req.user});
 });
 
-// app.post('/register/users',(req,res)=>{
-//     var user = {
-//         firstName: req.body.firstName,
-//         lastName: req.body.lastName,
-//         email: req.body.email,
-//         username: req.body.username,
-//         password: req.body.password
-//     }
-//     var message = mongo.registerFunction(user, 'users')
-//     console.log(message);
-//     res.statusCode = 200;
-//     res.setHeader('Content-Type', 'application/json');
-//     res.json({success: true, status: 'User Registration Successful!'});
-// })
-// app.post('/register/admins',(req,res)=>{
-//     var user = {
-//         firstName: req.body.firstName,
-//         lastName: req.body.lastName,
-//         email: req.body.email,
-//         username: req.body.username,
-//         password: req.body.password
-//     }
-//     var message = mongo.registerFunction(user, 'admins')
-//     console.log(message);
-//     res.statusCode = 200;
-//     res.setHeader('Content-Type', 'application/json');
-//     res.json({success: true, status: 'Admin Registration Successful!'});
-// })
 
-// const login = require('./login')
-// app.use('/login', login)
 
 app.listen(port,()=>{
     console.log("App started at "+port)

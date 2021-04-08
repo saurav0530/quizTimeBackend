@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors= require('cors');
+const fs = require('fs')
+const path = require('path')
 
 const Groups= require('../models/group');
 const Users= require('../models/user');
@@ -89,6 +91,45 @@ studentRouter.route('/:testid/getCompletedQuestions')
             res.status(200).send(response)
     })
 })
+studentRouter.route('/:testId/testPaper')
+.get(authenticate.verifyUser,(req,res,next)=>{
+    console.log("File Request");
+    Tests.findById(req.params.testId).then(test =>{
+        var filename
+        if(test.isQuestionInPDF)
+        {
+            var filename=`static/${req.params.testId}.pdf`;
+            // filename=`${req.params.testId}.pdf`
+            res.sendFile(path.join(__dirname,`/../../${filename}`))
+        }
+        else{
+            var response = {
+                questions: test.questions
+            }
+            res.status(200).send(response)
+        }
+    })
+})
+studentRouter.route('/:testId/testresponse')
+.get(authenticate.verifyUser,(req,res,next)=>{
+    Tests.findById(req.params.testId).then(test =>{
+        var filename
+        for(var j=0; j<test.studentMarks.length; j++)
+        {
+
+            if(`${test.studentMarks[j].userID}` == `${req.user._id}`)
+            {
+                filename=`static/${req.user._id}_${req.params.testId}.pdf`;
+                res.sendFile(path.join(__dirname,`/../../${filename}`))
+            };
+           
+            
+        }
+    })
+})
+
+
+
 });
 
 
