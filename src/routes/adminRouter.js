@@ -11,7 +11,7 @@ const constants=require('./../../constants');
 const connect = mongoose.connect(constants.mongoURL,{ useNewUrlParser: true,useUnifiedTopology: true  });
 const adminRouter=express.Router();
 const authenticate=require('../authenticate');
-const admin = require('../models/admin');
+const Admin = require('../models/admin');
 const { urlencoded } = require('body-parser');
 
 
@@ -183,6 +183,45 @@ adminRouter.route('/:testId/getEvaluationData/:studentId')
         res.status(200).send(response)
     })
 })
+
+
+
+adminRouter.route('/changepass')
+.put(authenticate.verifyAdmin,(req, res, next) => {
+    Admin.findById(req.user._id).then((user)=>{
+        var oldpass= req.body.oldpass;
+        var newpass=req.body.newpass;
+        user.changePassword(oldpass,newpass,(err,user,passErr)=>{
+            if(err)
+            {
+                res.status(200).json({success:false,error:err});
+            }
+            else if(user){
+                var usertoSend={
+                    username:user.username,
+                    firstname:user.firstname,
+                    lastname:user.lastname,
+                    email:user.email,
+                    organisation:user.oraganisation
+                }
+                var token = authenticate.getToken({_id: user._id});
+                var response={
+                    success: true, 
+                    token: token, 
+                    status: 'Password Updated!',
+                    user: usertoSend
+
+                }
+        
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(response);
+            }
+        })
+        user.save();
+
+    },err=>next(err));
+    })
 });
 
 module.exports = adminRouter;
