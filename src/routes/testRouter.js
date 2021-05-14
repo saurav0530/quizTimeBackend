@@ -45,7 +45,9 @@ testRouter.route('/:groupid/start/:testid')
                     uniqueID: students.uniqueID,
                     userID: students.userID,
                     answers : [],
-                    marks : 0
+                    marks : 0,
+                    negativeMarks:0,
+                    positiveMarks:0
                 }
                 temp = await Tests.findById(req.params.testid).then(async test => {
                     var remainingTime = (test.startDate.getTime() + (test.duration * 60000))
@@ -241,6 +243,16 @@ testRouter.route('/:testid/next/:qno')
                             {
                                 student.answers[obj.questionNo-1].marks=test.questions[req.params.qno-2].marks
                                 student.marks += test.questions[req.params.qno-2].marks
+                                student.positiveMarks+=test.questions[req.params.qno-2].marks
+                            }
+                            else if(test.negative)
+                            {
+                                var negP=Number(test.negPercentage)/100;
+                                var negmarks=negP*Number(test.questions[req.params.qno-2].marks);
+                                student.answers[obj.questionNo-1].marks=-1*negmarks
+                                student.marks -= negmarks
+                                student.negativeMarks+=negmarks
+
                             }
                          }
                     }   // data : student

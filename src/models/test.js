@@ -32,6 +32,14 @@ const testSchema = new Schema({
     testType:{
         type:String,
     },
+    negative:{
+        type:Boolean,
+        default:false
+    },
+    negPercentage:{
+        type:Number,
+        default: 0,
+    },
     studentMarks:[{
         name:{
             type: String,
@@ -49,6 +57,15 @@ const testSchema = new Schema({
             type:Number,
             default:0,
         },
+        positiveMarks:{
+            type:Number,
+            default:0,
+        },
+        negativeMarks:{
+            type:Number,
+            default:0,
+        },
+
         isEvaluated:{
             type:Boolean,
             default:false,

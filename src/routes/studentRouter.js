@@ -47,6 +47,8 @@ studentRouter.route('/:groupid/getTestByGroup')
                     subject : test.subject,
                     startDate : test.startDate,
                     totalMarks : test.totalMarks,
+                    negative:test.negative,
+                    negPercentage:test.negPercentage,
                     isCompleted : isCompleted
                 })
             })
@@ -75,11 +77,15 @@ studentRouter.route('/:testid/getCompletedQuestions')
                     title:test.title,
                     startDate:test.startDate,
                     testType:test.testType,
+                    negative:test.negative,
+                    negPercentage:test.negPercentage,
                     duration:test.duration,
                     subject:test.subject,
                     questions : test.questions,
                     response : test.studentMarks[j].answers,
                     marksObtained : test.studentMarks[j].marks,
+                    totalPositive:test.studentMarks[j].positiveMarks,
+                    totalNegative:test.studentMarks[j].negativeMarks,
                     isQuestionInPDF:test.isQuestionInPDF,
                     totalMarks : test.totalMarks
                 }

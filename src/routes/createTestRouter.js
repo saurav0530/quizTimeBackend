@@ -33,6 +33,8 @@ connect.then((db) => {
             isQuestionInPDF : req.body.isQuestionInPDF,
             totalQuestions:req.body.totalQuestions,
             totalMarks:req.body.totalMarks,
+            negative:req.body.negative,
+            negPercentage:req.body.negPercentage
         }
         Tests.create(Testobj)
         .then((test) => {
@@ -93,6 +95,8 @@ connect.then((db) => {
             subject:req.body.subject,
             startDate:req.body.startDate,
             testType:req.body.testType,
+            negative:req.body.negative,
+            negPercentage:req.body.negPercentage,
             // totalMarks:req.body.totalMarks,
             // questions:req.body.questions,
         }

@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 const cors= require('cors');
 const fs = require('fs')
 const path = require('path')
+const {Parser} = require('json2csv')
 
+// 6099fd4dd3f09b0015cb002b
 const Tests= require('../models/test');
 
 const constants=require('./../../constants');
@@ -22,9 +24,63 @@ connect.then((db) => {
     console.log("Connected correctly to server");
 
 
+// Router to download csv file of test-results
+adminRouter.route('/resultDownload/:testId')
+.get(authenticate.verifyAdmin,(req, res, next) => {
+    const testid = req.params.testId
+    Tests.findById(`${testid}`).then(test =>{
+        var data = []
+        for (let i = 0; i < test.studentMarks.length; i++) 
+        {
+            data.push({
+                sno:i+1,
+                name : test.studentMarks[i].name,
+                uniqueID : test.studentMarks[i].uniqueID,
+                marks : test.studentMarks[i].marks,
+                negMarks : test.studentMarks[i].negativeMarks,
+                posMarks : test.studentMarks[i].positiveMarks,
+                totalMarks : test.totalMarks
+            })            
+        }
+        const fields = [
+            {
+                label: 'S.No.',
+                value: 'sno'
+            },
+            {
+                label: 'ID',
+                value: 'uniqueID'
+            },
+            {
+              label: 'Name',
+              value: 'name'
+            },
+            {
+                label: 'Maximum Marks',
+                value: 'totalMarks'
+            },{
+                label: 'Total Positive',
+                value: 'posMarks'
+            },{
+                label: 'Total Negative',
+                value: 'negMarks'
+            },
+            {
+             label: 'Marks Obtained',
+              value: 'marks'
+            },
+           
+        ];
+        var template = new Parser({fields});
+        var csvData = template.parse(data);
+        res.header('Content-Type', 'text/csv');
+        res.status(200).attachment(`results_${testid}.csv`).send(csvData);
+    })
+})
+
 // Router to get group-wise lists of tests 
 adminRouter.route('/results/:testid')
-.get((req, res, next) => {
+.get(authenticate.verifyAdmin,(req, res, next) => {
     Tests.findById(req.params.testid).then(test =>{
         var response = []
         for (let i = 0; i < test.studentMarks.length; i++) 
@@ -34,6 +90,8 @@ adminRouter.route('/results/:testid')
                 uniqueID : test.studentMarks[i].uniqueID,
                 userID : test.studentMarks[i].userID,
                 marks : test.studentMarks[i].marks,
+                negMarks : test.studentMarks[i].negativeMarks,
+                posMarks : test.studentMarks[i].positiveMarks,
                 totalMarks : test.totalMarks
             })            
         }
@@ -105,12 +163,16 @@ adminRouter.route('/:testid/getCompletedQuestions/:studentId')
                     title:test.title,
                     startDate:test.startDate,
                     duration:test.duration,
+                    negative:test.negative,
+                    negPercentage:test.negPercentage,
                     subject:test.subject,
                     isQuestionInPDF:test.isQuestionInPDF,
                     questions : test.questions,
                     isEvaluated:test.studentMarks[j].isEvaluated,
                     response : test.studentMarks[j].answers,
                     marksObtained : test.studentMarks[j].marks,
+                    negMarks : test.studentMarks[j].negativeMarks,
+                    posMarks : test.studentMarks[j].positiveMarks,
                     totalMarks : test.totalMarks,
                     totalQuestions:test.totalQuestions
                 }
@@ -169,11 +231,15 @@ adminRouter.route('/:testId/getEvaluationData/:studentId')
                     startDate:test.startDate,
                     duration:test.duration,
                     subject:test.subject,
+                    negative:test.negative,
+                    negPercentage:test.negPercentage,
                     isQuestionInPDF:test.isQuestionInPDF,
                     questions : test.questions,
                     isEvaluated:test.studentMarks[j].isEvaluated,
                     response : test.studentMarks[j].answers,
                     marksObtained : test.studentMarks[j].marks,
+                    negMarks : test.studentMarks[i].negativeMarks,
+                    posMarks : test.studentMarks[i].positiveMarks,
                     totalMarks : test.totalMarks,
                     totalQuestions : test.totalQuestions
                 }
